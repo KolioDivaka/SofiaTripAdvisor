@@ -1,0 +1,137 @@
+@model SofiaTripAdvisor.ViewModels.SuggestionViewModel
+@{
+    ViewData["Title"] = "Sofia Trip Advisor";
+}
+
+<div class="container py-5">
+    <!-- Form Section -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <h1 class="card-title mb-4">🗺️ Find a Place</h1>
+
+            <form asp-action="GetSuggestions" asp-controller="Home" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Description" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Describe the place you're looking for..."></textarea>
+                    <span asp-validation-for="Input.Description" class="text-danger small d-block mt-1"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;" id="loadingSpinner"></span>
+                    Get Suggestions
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sessions Section -->
+    <div>
+        <h2 class="mb-4">📋 Your Past Suggestions</h2>
+
+        @if (Model.Sessions.Count == 0)
+        {
+            <div class="alert alert-info" role="alert">
+                No suggestions yet. Submit a query above to get started!
+            </div>
+        }
+        else
+        {
+            @foreach (var session in Model.Sessions)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="card-title mb-2">@session.UserInput</h5>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> @session.CreatedAt.ToString("g")
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                @if (!string.IsNullOrEmpty(session.Mood))
+                                {
+                                    <span class="badge bg-info me-2">
+                                        <i class="bi bi-emoji-smile"></i> @session.Mood
+                                    </span>
+                                }
+                                @if (!string.IsNullOrEmpty(session.Preferences))
+                                {
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-tag"></i> @session.Preferences
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        @if (session.Places.Count == 0)
+                        {
+                            <p class="text-muted">No places found for this suggestion.</p>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                @foreach (var place in session.Places)
+                                {
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card h-100 border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-primary">@place.Name</h6>
+                                                <p class="card-text small mb-3">@place.Description</p>
+
+                                                <div class="mb-3">
+                                                    @if (!string.IsNullOrEmpty(place.Mood))
+                                                    {
+                                                        <span class="badge bg-light text-dark me-2">
+                                                            <i class="bi bi-emoji-smile"></i> @place.Mood
+                                                        </span>
+                                                    }
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    @if (place.Budget.HasValue)
+                                                    {
+                                                        <div class="fw-semibold text-success">
+                                                            @GetBudgetDisplay(place.Budget.Value)
+                                                        </div>
+                                                    }
+                                                </div>
+
+                                                @if (!string.IsNullOrEmpty(place.GoogleMapsLink))
+                                                {
+                                                    <a href="@place.GoogleMapsLink" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100">
+                                                        <i class="bi bi-geo-alt"></i> View on Maps
+                                                    </a>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
+
+@functions {
+    private string GetBudgetDisplay(float budget)
+    {
+        if (budget <= 1)
+            return "€ Budget-Friendly";
+        else if (budget <= 2)
+            return "€€ Moderate";
+        else
+            return "€€€ Premium";
+    }
+}
+

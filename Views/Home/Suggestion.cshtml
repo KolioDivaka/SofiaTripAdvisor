@@ -1,0 +1,31 @@
+@model SofiaTripAdvisor.ViewModels.SuggestionViewModel
+@{
+    ViewData["Title"] = "Suggestions";
+}
+
+<h1>Saved suggestions</h1>
+
+@if (!Model.Sessions.Any() || Model.Sessions.All(s => !s.Places.Any()))
+{
+    <p>No saved suggestions found.</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var session in Model.Sessions)
+        {
+            @foreach (var place in session.Places)
+            {
+                <div class="list-group-item">
+                    <h5 class="mb-1">@place.Name</h5>
+                    <p class="mb-1">@place.Description</p>
+                    @if (!string.IsNullOrEmpty(place.GoogleMapsLink))
+                    {
+                        <a href="@place.GoogleMapsLink" target="_blank" class="small">Open in Maps</a>
+                    }
+                    <div class="small text-muted">Added: @place.CreatedUtc.ToLocalTime().ToString("g")</div>
+                </div>
+            }
+        }
+    </div>
+}
