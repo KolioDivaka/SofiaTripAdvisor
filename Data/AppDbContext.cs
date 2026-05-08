@@ -9,5 +9,6 @@ namespace SofiaTripAdvisor.Data
         public DbSet<SuggestionSession> SuggestionSessions { get; set; }
         public DbSet<SavedPlace> SavedPlaces { get; set; }
 
+       
     }
 }

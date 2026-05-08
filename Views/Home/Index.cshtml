@@ -62,6 +62,13 @@
                                         <i class="bi bi-tag"></i> @session.Preferences
                                     </span>
                                 }
+                                <form asp-action="Regenerate" asp-controller="Home" method="post" class="d-inline ms-2">
+                                        <input type="hidden" name="sessionId" value="@session.Id" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                            🔄 Regenerate
+                                        </button>
+                                    </form>
+                                
                             </div>
                         </div>
                     </div>
@@ -106,6 +113,8 @@
                                                         <i class="bi bi-geo-alt"></i> View on Maps
                                                     </a>
                                                 }
+                                               
+                                                
                                             </div>
                                         </div>
                                     </div>

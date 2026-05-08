@@ -15,10 +15,14 @@ namespace SofiaTripAdvisor.Services
             _kerenelFactory = kerenelFactory;
         }
 
-        public async Task<List<SavedPlace>> GetSuggestionsAsync(List<PlaceResult> places, SearchContext context, int sessionId, CancellationToken ct) {
+        public async Task<List<SavedPlace>> GetSuggestionsAsync(List<PlaceResult> places, SearchContext context, int sessionId, CancellationToken ct, List<string>? excludeNames = null) {
             
             var kernel = _kerenelFactory.CreateKernel();
             var chat = kernel.GetRequiredService<IChatCompletionService>();
+            
+            var exclusionText = excludeNames?.Any() == true
+           ? $" Do NOT suggest these places: {string.Join(", ", excludeNames)}."
+           : "";
 
             var placesText = string.Join("\n", places.Select((p, i) =>
              $"{i + 1}. {p.Name} | Rating: {p.Rating} ({p.UserRatingsTotal} reviews) | " +
@@ -56,6 +60,7 @@ namespace SofiaTripAdvisor.Services
         
             Available places:
             {placesText}
+            {exclusionText}
         
             Return the 3 best as a JSON array.
             """;

@@ -8,5 +8,8 @@
         public string? Preferences { get; set; }
         public string UserInput { get; set; } = string.Empty;
         public List<SavedPlace> Places { get; set; } = new();
+        
+        public string? Location {  get; set; }
+        public string? CachePlacesJson { get; set; }
     }
 }

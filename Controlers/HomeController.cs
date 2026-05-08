@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SofiaTripAdvisor.ViewModels;  
-using SofiaTripAdvisor.Services;
+using Microsoft.SemanticKernel;
 using SofiaTripAdvisor.Data;
 using SofiaTripAdvisor.Models;
+using SofiaTripAdvisor.Services;
+using SofiaTripAdvisor.ViewModels;  
+using System.Numerics;
+using System.Text.Json;
 namespace SofiaTripAdvisor.Controlers
 {
     public class HomeController : Controller
@@ -46,8 +49,11 @@ namespace SofiaTripAdvisor.Controlers
                 UserInput = input.Description,
                 Mood = searchContext.Keywords,
                 Preferences = searchContext.PlaceType,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Location = searchContext.Location
             };
+
+            session.CachePlacesJson = JsonSerializer.Serialize(places);
 
             _db.SuggestionSessions.Add(session);
             await _db.SaveChangesAsync(ct);
@@ -67,6 +73,36 @@ namespace SofiaTripAdvisor.Controlers
                 .ToListAsync(ct);
 
             return View(new SuggestionViewModel { Sessions = sessions });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Regenerate(int sessionId, CancellationToken ct)
+        {
+            var session = await _db.SuggestionSessions.Include(s => s.Places)
+                .FirstOrDefaultAsync(s => s.Id == sessionId);
+            if(session == null)
+            {
+                return NotFound();
+            }
+
+            var places = JsonSerializer.Deserialize<List<PlaceResult>>(session.CachePlacesJson ?? "[]") ?? new List<PlaceResult>();
+
+            var searchContext = new SearchContext(
+                session.Location ?? string.Empty,
+                session.Preferences ?? string.Empty,
+                session.Mood ?? string.Empty
+            );
+
+            var exludedNames = session.Places.Select(p => p.Name).ToList();
+
+            var newSuggestions = await _suggestionAgent.GetSuggestionsAsync(places, searchContext, session.Id, ct, exludedNames);
+
+            _db.SavedPlaces.RemoveRange(session.Places);
+            _db.SavedPlaces.AddRange(newSuggestions);
+            await _db.SaveChangesAsync(ct);
+
+            return RedirectToAction("Index");
+
         }
     }
 }
