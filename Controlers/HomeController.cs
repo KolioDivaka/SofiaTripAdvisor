@@ -25,17 +25,29 @@ namespace SofiaTripAdvisor.Controlers
             _searchContextService = searchContextService;
             _geocodingService = geocodingService;
         }
-        public IActionResult Index()
-        {
-            return View(new AddSuggestionInput());
-        }
 
+        [HttpPost]
+        public async Task<IActionResult> Index()
+        {
+
+
+            return View(new SuggestionViewModel());
+        }
         [HttpPost]
         public async Task<IActionResult> GetSuggestions(AddSuggestionInput input, CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
-                return View("Index", input);
+                var viewModel = new SuggestionViewModel
+                {
+                    Input = input,
+                    Sessions = await _db.SuggestionSessions
+                    .Include(s => s.Places)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToListAsync(ct)
+                };
+
+                return View("Index", viewModel);
             }
 
             var searchContext = await _searchContextService.GetLocationAsync(input.Description, ct);
@@ -103,6 +115,19 @@ namespace SofiaTripAdvisor.Controlers
 
             return RedirectToAction("Index");
 
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ClearHitory(CancellationToken ct)
+        {
+            var sesions = await _db.SuggestionSessions.Include(s => s.Places).ToListAsync();
+
+            _db.SavedPlaces.RemoveRange(sesions.SelectMany(s => s.Places));
+            _db.SuggestionSessions.RemoveRange(sesions);
+            await _db.SaveChangesAsync(ct);
+
+
+            return RedirectToAction("Index");
         }
     }
 }
