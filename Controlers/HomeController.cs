@@ -29,9 +29,7 @@ namespace SofiaTripAdvisor.Controlers
         [HttpPost]
         public async Task<IActionResult> Index()
         {
-
-
-            return View(new SuggestionViewModel());
+             return View(new SuggestionViewModel());
         }
         [HttpPost]
         public async Task<IActionResult> GetSuggestions(AddSuggestionInput input, CancellationToken ct)
@@ -118,15 +116,13 @@ namespace SofiaTripAdvisor.Controlers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ClearHitory(CancellationToken ct)
+        public async Task<IActionResult> ClearHistory(CancellationToken ct)
         {
-            var sesions = await _db.SuggestionSessions.Include(s => s.Places).ToListAsync();
+            var seesions = await _db.SuggestionSessions.Include(s => s.Places).ToListAsync(ct);
 
-            _db.SavedPlaces.RemoveRange(sesions.SelectMany(s => s.Places));
-            _db.SuggestionSessions.RemoveRange(sesions);
+            _db.SavedPlaces.RemoveRange(seesions.SelectMany(s => s.Places));
+            _db.SuggestionSessions.RemoveRange(seesions);
             await _db.SaveChangesAsync(ct);
-
-
             return RedirectToAction("Index");
         }
     }

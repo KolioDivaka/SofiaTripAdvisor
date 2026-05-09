@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SofiaTripAdvisor.Data;
 using SofiaTripAdvisor.Services;
 
@@ -14,8 +15,16 @@ builder.Services.AddSingleton<KernelFactory>();
 builder.Services.AddScoped<SuggestionAgent>();
 builder.Services.AddScoped<SearchContextService>();
 
-//InMemory DB for starting 
+//Configuration of the SqlServer and a InMemoryDb fallback 
+var connectionString = builder.Configuration.GetConnectionString("AppDbContext");
+if (!connectionString.IsNullOrEmpty()) {
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(connectionString));
+}
+else
+{
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("TripAdvisorDb"));
+}
+
 
 //Google APIs
 builder.Services.AddScoped<SearchContextService>();
@@ -25,6 +34,16 @@ builder.Services.AddHttpClient<GetNearbyPlacesService>();
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    if(!db.Database.IsInMemory())
+    {
+        db.Database.Migrate();
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
